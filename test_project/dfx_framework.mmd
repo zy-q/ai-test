@@ -1,0 +1,128 @@
+# DFX Reliability Test Framework - 执行框架图
+
+## DFX案例组成结构
+
+```mermaid
+graph TB
+    subgraph DFX测试框架
+        subgraph 测试集管理层
+            TS[测试集<br/>TestSuite]
+            TB[测试床<br/>TestBed]
+            CF[配置管理<br/>Config]
+        end
+
+        subgraph 测试用例层
+            TC[DFX测试案例<br/>TestCase]
+        end
+
+        subgraph 案例执行层
+            PRE[测试前置<br/>Precondition<br/>Setup关键字]
+            STEP[测试步骤<br/>Test Step]
+            PST[测试后置<br/>Postcondition<br/>Cleanup关键字]
+        end
+
+        subgraph 关键字层
+            subgraph 功能关键字 Function
+                L[循环执行<br/>Loop]
+                D[时长执行<br/>Duration]
+                R[随机执行<br/>Random]
+                C[并发执行<br/>Concurrent]
+            end
+
+            subgraph 测试方法关键字 Method
+                subgraph 业务模型 Business
+                    CFG[配置面模型<br/>Config]
+                    DAT[数据面模型<br/>Data]
+                end
+                FLT[故障模型<br/>Fault]
+                MON[监控模型<br/>Monitor]
+            end
+
+            VFY[检查方法<br/>Verify]
+        end
+    end
+
+    TS --> TB
+    TS --> CF
+    TB --> TC
+    TC --> PRE
+    TC --> STEP
+    TC --> PST
+
+    PRE --> VFY
+    STEP --> L
+    STEP --> D
+    STEP --> R
+    STEP --> C
+    STEP --> CFG
+    STEP --> DAT
+    STEP --> FLT
+    STEP --> MON
+    STEP --> VFY
+    PST --> VFY
+```
+
+## DFX案例执行流程
+
+```mermaid
+flowchart TD
+    A([开始]) --> B[加载配置]
+    B --> C[加载测试集]
+    C --> D{选择测试床}
+    D -->|是| E[绑定测试床配置]
+    D -->|否| F[使用默认配置]
+    E --> G[执行测试前置 Setup]
+    F --> G
+
+    G --> H{前置检查}
+    H -->|通过| I[调用测试步骤]
+    H -->|失败| J[记录失败日志]
+    J --> K[执行测试后置 Cleanup]
+    K --> L([案例结束 - 失败])
+
+    I --> L1{执行结果检查}
+    L1 -->|需要循环| L2[Loop关键字]
+    L2 --> I
+    L1 -->|需要时长| L3[Duration关键字]
+    L3 --> I
+    L1 -->|需要随机| L4[Random关键字]
+    L4 --> I
+    L1 -->|需要并发| L5[Concurrent关键字]
+    L5 --> I
+    L1 -->|正常| M[业务关键字执行]
+
+    M --> N{检查点验证}
+    N -->|通过| O[记录测试数据]
+    O --> P{更多步骤?}
+    P -->|是| I
+    P -->|否| Q[执行测试后置 Cleanup]
+    N -->|失败| J
+
+    Q --> R([案例结束 - 成功])
+```
+
+## 关键字分类
+
+```mermaid
+mindmap
+    root((关键字))
+        Setup
+            环境初始化
+            资源准备
+            依赖检查
+        Verify
+            断言封装
+            结果校验
+            异常判定
+        Function
+            Loop
+            Duration
+            Random
+            Concurrent
+        Method
+            Business
+                Config
+                Data
+            Fault
+            Monitor
+```
